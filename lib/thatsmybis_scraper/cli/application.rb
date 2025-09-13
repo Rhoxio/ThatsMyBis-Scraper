@@ -4,6 +4,7 @@ require 'optparse'
 require 'colorize'
 require 'json'
 require 'fileutils'
+require 'set'
 
 module ThatsMyBisScraper
   module CLI
@@ -144,13 +145,23 @@ module ThatsMyBisScraper
           
           puts "Step 2: Scraping character pages...".blue
           character_data = []
+          visited_urls = Set.new
+          skipped_count = 0
           
           profile_links.each_with_index do |profile_link, index|
+            # Skip if we've already visited this URL
+            if visited_urls.include?(profile_link[:url])
+              puts "[#{index + 1}/#{profile_links.length}] Skipping duplicate: #{profile_link[:player_name]} (#{profile_link[:url]})".yellow
+              skipped_count += 1
+              next
+            end
+            
             puts "[#{index + 1}/#{profile_links.length}] Scraping: #{profile_link[:player_name]}".cyan
             
             begin
               char_data = character_scraper.scrape_character_page(profile_link[:url])
               character_data << char_data
+              visited_urls.add(profile_link[:url])
               sleep(1) # Be respectful
             rescue => e
               puts "Error scraping #{profile_link[:player_name]}: #{e.message}".red
@@ -159,6 +170,9 @@ module ThatsMyBisScraper
           end
           
           puts "Completed scraping #{character_data.length} characters".green
+          if skipped_count > 0
+            puts "Skipped #{skipped_count} duplicate URLs".yellow
+          end
           
           # Save character data to file
           if character_data.any?
