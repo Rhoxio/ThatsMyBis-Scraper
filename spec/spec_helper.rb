@@ -28,4 +28,13 @@ RSpec.configure do |config|
     c.hook_into :webmock
     c.configure_rspec_metadata!
   end
+
+  # Prevent WebDriver from actually running in tests
+  config.before(:each) do
+    # Mock Selenium WebDriver to prevent actual browser automation
+    allow(Selenium::WebDriver).to receive(:for).and_return(double('MockDriver'))
+    allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_argument)
+    allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_preference)
+    allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_experimental_option)
+  end
 end

@@ -79,6 +79,10 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
 
     before do
       allow(FileUtils).to receive(:mkdir_p)
+      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(double('Options'))
+      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_argument)
+      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_preference)
+      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_experimental_option)
       allow(Selenium::WebDriver).to receive(:for).and_return(double('Driver'))
     end
 
@@ -94,14 +98,29 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
       manager.send(:create_driver)
     end
 
+    it 'configures Chrome options correctly' do
+      mock_options = double('Options')
+      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(mock_options)
+      
+      expect(mock_options).to receive(:add_argument).with('--no-sandbox')
+      expect(mock_options).to receive(:add_argument).with('--disable-dev-shm-usage')
+      expect(mock_options).to receive(:add_argument).with('--disable-blink-features=AutomationControlled')
+      expect(mock_options).to receive(:add_experimental_option).with('excludeSwitches', ['enable-automation'])
+      expect(mock_options).to receive(:add_experimental_option).with('useAutomationExtension', false)
+      
+      manager.send(:create_driver)
+    end
+
     it 'handles headless mode' do
       manager.instance_variable_get(:@options)[:headless] = true
       
-      expect(Selenium::WebDriver).to receive(:for) do |browser, options:|
-        expect(browser).to eq(:chrome)
-        expect(options.to_a).to include('--headless')
-        double('Driver')
-      end
+      mock_options = double('Options')
+      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(mock_options)
+      allow(mock_options).to receive(:add_argument)
+      allow(mock_options).to receive(:add_preference)
+      allow(mock_options).to receive(:add_experimental_option)
+      
+      expect(mock_options).to receive(:add_argument).with('--headless')
       
       manager.send(:create_driver)
     end

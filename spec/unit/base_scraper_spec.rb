@@ -74,10 +74,22 @@ RSpec.describe ThatsMyBisScraper::Scrapers::BaseScraper do
       allow(mock_driver).to receive(:page_source).and_return(mock_html)
       allow(mock_driver).to receive(:current_url).and_return(test_url)
       allow(scraper_with_driver).to receive(:needs_oauth_login?).and_return(false)
+      allow(scraper_with_driver).to receive(:wait_for_page_load)
     end
 
     it 'uses external driver when provided' do
       expect(mock_driver).to receive(:navigate).with(test_url)
+      expect(scraper_with_driver).to receive(:wait_for_page_load)
+      
+      doc = scraper_with_driver.scrape_with_selenium(test_url)
+      expect(doc).to be_a(Nokogiri::HTML::Document)
+    end
+
+    it 'handles OAuth login detection' do
+      allow(scraper_with_driver).to receive(:needs_oauth_login?).and_return(true)
+      allow(scraper_with_driver).to receive(:handle_oauth_login)
+      
+      expect(scraper_with_driver).to receive(:handle_oauth_login)
       
       doc = scraper_with_driver.scrape_with_selenium(test_url)
       expect(doc).to be_a(Nokogiri::HTML::Document)
