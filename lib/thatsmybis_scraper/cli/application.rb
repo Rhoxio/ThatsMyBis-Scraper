@@ -2,6 +2,8 @@
 
 require 'optparse'
 require 'colorize'
+require 'json'
+require 'fileutils'
 
 module ThatsMyBisScraper
   module CLI
@@ -158,6 +160,12 @@ module ThatsMyBisScraper
           
           puts "Completed scraping #{character_data.length} characters".green
           
+          # Save character data to file
+          if character_data.any?
+            filename = save_character_data_to_file(character_data, roster_scraper.base_url)
+            puts "Character data saved to: #{filename}".green
+          end
+          
         ensure
           driver_manager.cleanup
         end
@@ -207,6 +215,24 @@ module ThatsMyBisScraper
         ensure
           driver_manager.cleanup
         end
+      end
+
+      private
+
+      def save_character_data_to_file(character_data, base_url)
+        filename = "data/character_data_#{Time.now.strftime('%Y%m%d_%H%M%S')}.json"
+        
+        FileUtils.mkdir_p('data') unless Dir.exist?('data')
+        
+        data = {
+          base_url: base_url,
+          scraped_at: Time.now.iso8601,
+          total_characters: character_data.length,
+          characters: character_data
+        }
+        
+        File.write(filename, JSON.pretty_generate(data))
+        filename
       end
     end
   end
