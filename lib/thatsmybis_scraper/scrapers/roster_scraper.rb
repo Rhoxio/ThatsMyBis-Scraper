@@ -102,9 +102,11 @@ module ThatsMyBisScraper
         # Skip "create character" links and other non-profile links
         next if href.include?('/c/create') || 
                 href.include?('member_id=') ||
-                href.include?('/loot') ||
                 link.text.strip.downcase.include?('create') ||
                 link.text.strip.downcase.include?('new')
+        
+        # Remove /loot from URLs to convert loot pages to profile pages
+        href = href.gsub('/loot', '') if href.include?('/loot')
         
         # Convert relative URLs to absolute
         absolute_url = make_absolute_url(href)
@@ -140,9 +142,11 @@ module ThatsMyBisScraper
         # Skip "create character" links and other non-profile links
         next if href.include?('/c/create') || 
                 href.include?('member_id=') ||
-                href.include?('/loot') ||
                 link.text.strip.downcase.include?('create') ||
                 link.text.strip.downcase.include?('new')
+        
+        # Remove /loot from URLs to convert loot pages to profile pages
+        href = href.gsub('/loot', '') if href.include?('/loot')
         
         # Skip if we already found this in dropdown items
         next if profile_links.any? { |pl| pl[:relative_url] == href }
