@@ -29,18 +29,24 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
 
   describe '#driver' do
     let(:manager) { described_class.new }
+    let(:mock_driver) { double('Driver') }
 
     before do
-      # Mock Selenium WebDriver creation
-      allow(Selenium::WebDriver).to receive(:for).and_return(double('Driver'))
+      # Mock all the dependencies
       allow(FileUtils).to receive(:mkdir_p)
+      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(double('Options'))
+      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_argument)
+      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_experimental_option)
+      allow(Selenium::WebDriver).to receive(:for).and_return(mock_driver)
+      allow(mock_driver).to receive(:execute_script)
+      allow(Dir).to receive(:exist?).and_return(false)
     end
 
     it 'creates driver on first call' do
       expect(Selenium::WebDriver).to receive(:for).with(:chrome, options: instance_of(Selenium::WebDriver::Chrome::Options))
       
       driver = manager.driver
-      expect(driver).to be_a(RSpec::Mocks::Double)
+      expect(driver).to eq(mock_driver)
     end
 
     it 'returns same driver on subsequent calls' do
@@ -48,6 +54,7 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
       driver2 = manager.driver
       
       expect(driver1).to eq(driver2)
+      expect(driver1).to eq(mock_driver)
     end
   end
 
@@ -76,14 +83,17 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
 
   describe '#create_driver' do
     let(:manager) { described_class.new }
+    let(:mock_options) { double('Options') }
+    let(:mock_driver) { double('Driver') }
 
     before do
       allow(FileUtils).to receive(:mkdir_p)
-      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(double('Options'))
-      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_argument)
-      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_preference)
-      allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_experimental_option)
-      allow(Selenium::WebDriver).to receive(:for).and_return(double('Driver'))
+      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(mock_options)
+      allow(mock_options).to receive(:add_argument)
+      allow(mock_options).to receive(:add_experimental_option)
+      allow(Selenium::WebDriver).to receive(:for).and_return(mock_driver)
+      allow(mock_driver).to receive(:execute_script)
+      allow(Dir).to receive(:exist?).and_return(false)
     end
 
     it 'creates user data directory' do
@@ -93,20 +103,20 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
     end
 
     it 'creates Chrome driver with options' do
-      expect(Selenium::WebDriver).to receive(:for).with(:chrome, options: instance_of(Selenium::WebDriver::Chrome::Options))
+      expect(Selenium::WebDriver).to receive(:for).with(:chrome, options: mock_options)
       
       manager.send(:create_driver)
     end
 
     it 'configures Chrome options correctly' do
-      mock_options = double('Options')
-      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(mock_options)
-      
       expect(mock_options).to receive(:add_argument).with('--no-sandbox')
       expect(mock_options).to receive(:add_argument).with('--disable-dev-shm-usage')
       expect(mock_options).to receive(:add_argument).with('--disable-blink-features=AutomationControlled')
+      expect(mock_options).to receive(:add_argument).with(match(/--user-agent=/))
+      expect(mock_options).to receive(:add_argument).with(match(/--user-data-dir=/))
       expect(mock_options).to receive(:add_experimental_option).with('excludeSwitches', ['enable-automation'])
       expect(mock_options).to receive(:add_experimental_option).with('useAutomationExtension', false)
+      expect(mock_driver).to receive(:execute_script).with("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
       
       manager.send(:create_driver)
     end
@@ -114,13 +124,18 @@ RSpec.describe ThatsMyBisScraper::Utils::WebDriverManager do
     it 'handles headless mode' do
       manager.instance_variable_get(:@options)[:headless] = true
       
-      mock_options = double('Options')
-      allow(Selenium::WebDriver::Chrome::Options).to receive(:new).and_return(mock_options)
-      allow(mock_options).to receive(:add_argument)
-      allow(mock_options).to receive(:add_preference)
-      allow(mock_options).to receive(:add_experimental_option)
-      
       expect(mock_options).to receive(:add_argument).with('--headless')
+      expect(mock_driver).to receive(:execute_script).with("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+      
+      manager.send(:create_driver)
+    end
+
+    it 'handles experimental options fallback' do
+      allow(mock_options).to receive(:add_experimental_option).and_raise(NoMethodError)
+      
+      expect(mock_options).to receive(:add_argument).with('--disable-extensions')
+      expect(mock_options).to receive(:add_argument).with('--disable-plugins')
+      expect(mock_driver).to receive(:execute_script).with("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
       
       manager.send(:create_driver)
     end

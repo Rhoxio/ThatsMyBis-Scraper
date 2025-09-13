@@ -32,9 +32,18 @@ RSpec.configure do |config|
   # Prevent WebDriver from actually running in tests
   config.before(:each) do
     # Mock Selenium WebDriver to prevent actual browser automation
-    allow(Selenium::WebDriver).to receive(:for).and_return(double('MockDriver'))
+    mock_driver = double('MockDriver')
+    allow(mock_driver).to receive(:navigate)
+    allow(mock_driver).to receive(:page_source)
+    allow(mock_driver).to receive(:current_url)
+    allow(mock_driver).to receive(:execute_script)
+    allow(mock_driver).to receive(:quit)
+    
+    allow(Selenium::WebDriver).to receive(:for).and_return(mock_driver)
     allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_argument)
     allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_preference)
     allow_any_instance_of(Selenium::WebDriver::Chrome::Options).to receive(:add_experimental_option)
+    allow(FileUtils).to receive(:mkdir_p)
+    allow(Dir).to receive(:exist?).and_return(false)
   end
 end
