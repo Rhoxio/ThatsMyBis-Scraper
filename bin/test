@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require 'rspec/core'
+
+# Configure RSpec
+RSpec.configure do |config|
+  config.color = true
+  config.formatter = :documentation
+end
+
+# Run the specs
+exit_code = RSpec::Core::Runner.run(ARGV.empty? ? ['spec/'] : ARGV)
+
+exit exit_code
