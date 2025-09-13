@@ -89,7 +89,7 @@ module ThatsMyBisScraper
       def run_character_scrape
         puts "Scraping character page...".blue
         puts "Please provide a character URL:".yellow
-        url = gets.chomp
+        url = STDIN.gets.chomp
         
         if url.empty?
           puts "No URL provided, using default test URL".yellow
@@ -133,7 +133,7 @@ module ThatsMyBisScraper
           
           puts "Found #{profile_links.length} character profiles".green
           puts "Continue with full scrape? (y/n): ".cyan
-          response = gets.chomp.downcase
+          response = STDIN.gets.chomp.downcase
           
           unless response == 'y' || response == 'yes'
             puts "Scraping cancelled.".yellow
