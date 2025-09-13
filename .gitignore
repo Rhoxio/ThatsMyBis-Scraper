@@ -24,12 +24,6 @@
 /logs/*.log
 *.log
 
-# Data files
-/data/*.json
-/data/*.csv
-/data/*.xml
-/data/*.html
-
 # Chrome user data (contains authentication cookies)
 /data/chrome_user_data/
 
