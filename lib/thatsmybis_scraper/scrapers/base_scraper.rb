@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module ThatsMyBisScraper
-  # Main scraper class
-  class Scraper
+  module Scrapers
+    # Base scraper class for HTTP and Selenium scraping
+    class BaseScraper
     include HTTParty
 
     def initialize(options = {})
@@ -238,6 +239,7 @@ module ThatsMyBisScraper
       
       # Add your parsing logic here
       doc
+    end
     end
   end
 end

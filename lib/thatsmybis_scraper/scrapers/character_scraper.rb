@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 module ThatsMyBisScraper
-  # Character scraper class for extracting wishlist data from individual character pages
-  class CharacterScraper
+  module Scrapers
+    # Character scraper for extracting wishlist data from individual character pages
+    class CharacterScraper
     def initialize(scraper = nil)
-      @scraper = scraper || Scraper.new
+      @scraper = scraper || BaseScraper.new
     end
 
     def scrape_character_page(url, use_persistent = false)
@@ -465,6 +466,7 @@ module ThatsMyBisScraper
         # effects: [],
         # description: nil
       }
+    end
     end
   end
 end

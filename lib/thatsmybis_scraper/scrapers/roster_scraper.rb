@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module ThatsMyBisScraper
-  # Roster retriever class for collecting base data and links
-  class RosterRetriever
+  module Scrapers
+    # Roster scraper for collecting character profile links
+    class RosterScraper
     def initialize(base_url = nil, options = {})
       # Hard-coded URL for testing - That's My BIS Chonglers roster
       @base_url = base_url || "https://thatsmybis.com/11258/chonglers/roster"
@@ -28,7 +29,7 @@ module ThatsMyBisScraper
         if @scraper
           doc = @scraper.scrape(@base_url)
         else
-          scraper = Scraper.new
+            scraper = BaseScraper.new
           doc = scraper.scrape(@base_url)
         end
       end
@@ -51,7 +52,7 @@ module ThatsMyBisScraper
         if @scraper
           doc = @scraper.scrape(@base_url)
         else
-          scraper = Scraper.new
+            scraper = BaseScraper.new
           doc = scraper.scrape(@base_url)
         end
       end
@@ -330,5 +331,6 @@ module ThatsMyBisScraper
 
     # Getters
     attr_reader :collected_links, :filtered_links, :profile_links, :base_url, :domain
+    end
   end
 end

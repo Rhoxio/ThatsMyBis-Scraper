@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module ThatsMyBisScraper
-  # Manages a single WebDriver instance for the entire application
-  class WebDriverManager
+  module Utils
+    # Manages a single WebDriver instance for the entire application
+    class WebDriverManager
     def self.instance
       @instance ||= new
     end
@@ -68,6 +69,7 @@ module ThatsMyBisScraper
       
       puts "WebDriver created successfully with persistent cookies".green
       driver
+    end
     end
   end
 end
