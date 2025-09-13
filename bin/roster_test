@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/thatsmybis_scraper'
+
+def main
+  puts "ThatsMyBis Roster Retriever Test".blue.bold
+  
+  # Get target URL from command line or environment
+  target_url = ARGV[0] || ENV['TARGET_URL']
+  
+  unless target_url
+    puts "Please provide a target URL:".red
+    puts "  Usage: ./bin/roster_test <URL>".yellow
+    puts "  Or set TARGET_URL environment variable".yellow
+    exit 1
+  end
+  
+  begin
+    # Initialize the roster retriever with custom options
+    retriever = ThatsMyBisScraper::RosterRetriever.new(target_url, {
+      follow_external: false,  # Only follow internal links
+      link_patterns: [
+        # Add specific patterns you want to match
+        # /roster/i,  # Example: links containing "roster"
+        # /player/i   # Example: links containing "player"
+      ],
+      exclude_patterns: [
+        'javascript:',  # Exclude javascript links
+        '#',           # Exclude anchor links
+        'mailto:',     # Exclude email links
+        /\.(jpg|jpeg|png|gif|pdf|zip)$/i  # Exclude file downloads
+      ]
+    })
+    
+    # Collect links from the base URL
+    puts "Collecting links from: #{target_url}".green
+    links = retriever.collect_links
+    
+    # Print summary
+    retriever.print_summary
+    
+    # Save links to file
+    output_file = retriever.save_links_to_file
+    
+    # Show some sample links
+    puts "\nSample links found:".yellow
+    retriever.filtered_links.first(5).each_with_index do |link, index|
+      puts "#{index + 1}. #{link[:text]} -> #{link[:url]}"
+    end
+    
+    puts "\nFull results saved to: #{output_file}".green
+    
+  rescue ThatsMyBisScraper::Error => e
+    puts "Scraper Error: #{e.message}".red
+    exit 1
+  rescue => e
+    puts "Unexpected Error: #{e.message}".red
+    puts e.backtrace.first(5).join("\n").red
+    exit 1
+  end
+end
+
+main if __FILE__ == $PROGRAM_NAME

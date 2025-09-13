@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/thatsmybis_scraper'
+
+def main
+  puts "ThatsMyBis Scraper".blue.bold
+  
+  begin
+    scraper = ThatsMyBisScraper::Scraper.new
+    result = scraper.scrape
+    
+    puts "Scraping completed successfully!".green
+    puts "Parsed #{result.css('*').length} HTML elements".blue
+    
+  rescue ThatsMyBisScraper::Error => e
+    puts "Scraper Error: #{e.message}".red
+    exit 1
+  rescue => e
+    puts "Unexpected Error: #{e.message}".red
+    puts e.backtrace.first(5).join("\n").red
+    exit 1
+  end
+end
+
+main if __FILE__ == $PROGRAM_NAME

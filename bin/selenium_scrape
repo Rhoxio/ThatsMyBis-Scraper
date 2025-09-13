@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/thatsmybis_scraper'
+
+def main
+  puts "ThatsMyBis Selenium Scraper".blue.bold
+  
+  begin
+    # Initialize scraper with Selenium support
+    scraper = ThatsMyBisScraper::Scraper.new(
+      headless: ENV.fetch('HEADLESS', 'false') == 'true'
+    )
+    
+    # Get target URL from environment or command line
+    target_url = ARGV[0] || ENV['TARGET_URL']
+    
+    unless target_url
+      puts "Please provide a target URL:".red
+      puts "  Usage: ./bin/selenium_scrape <URL>".yellow
+      puts "  Or set TARGET_URL environment variable".yellow
+      exit 1
+    end
+    
+    result = scraper.scrape(target_url)
+    
+    puts "Scraping completed successfully!".green
+    puts "Parsed #{result.css('*').length} HTML elements".blue
+    
+    # Save the result to a file for inspection
+    output_file = "data/scraped_content_#{Time.now.strftime('%Y%m%d_%H%M%S')}.html"
+    FileUtils.mkdir_p('data') unless Dir.exist?('data')
+    File.write(output_file, result.to_html)
+    puts "Content saved to: #{output_file}".green
+    
+  rescue ThatsMyBisScraper::Error => e
+    puts "Scraper Error: #{e.message}".red
+    exit 1
+  rescue => e
+    puts "Unexpected Error: #{e.message}".red
+    puts e.backtrace.first(5).join("\n").red
+    exit 1
+  end
+end
+
+main if __FILE__ == $PROGRAM_NAME

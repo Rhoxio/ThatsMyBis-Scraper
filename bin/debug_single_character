@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/thatsmybis_scraper'
+
+def main
+  puts "That's My BIS Single Character Debug".blue.bold
+  puts "This will scrape ONE character page for debugging".yellow
+  
+  # Initialize the single WebDriver instance
+  driver_manager = ThatsMyBisScraper::WebDriverManager.instance
+  shared_driver = driver_manager.driver
+  
+  begin
+    # Initialize components with shared driver
+    scraper = ThatsMyBisScraper::Scraper.new(driver: shared_driver)
+    character_scraper = ThatsMyBisScraper::CharacterScraper.new(scraper)
+    
+    # Test with a single character URL
+    test_url = "https://thatsmybis.com/11258/chonglers/c/540876/aelektra"
+    
+    puts "Debugging character: #{test_url}".green
+    
+    # Scrape the character page
+    character_data = character_scraper.scrape_character_page(test_url, use_persistent: true)
+    
+    # Save the raw HTML for debugging
+    if scraper.last_document
+      html_filename = "data/debug_raw_html_#{Time.now.strftime('%Y%m%d_%H%M%S')}.html"
+      File.write(html_filename, scraper.last_document.to_html)
+      puts "Raw HTML saved to: #{html_filename}".green
+      
+      # Also save a text version for easier reading
+      text_filename = "data/debug_page_text_#{Time.now.strftime('%Y%m%d_%H%M%S')}.txt"
+      File.write(text_filename, scraper.last_document.text)
+      puts "Page text saved to: #{text_filename}".green
+    end
+    
+    # Display detailed debug info
+    puts "\n" + "="*60
+    puts "DEBUG RESULTS".blue.bold
+    puts "="*60
+    
+    puts "Character Name: #{character_data[:name]}"
+    puts "Character Class: #{character_data[:class]}"
+    puts "Character Level: #{character_data[:level]}"
+    puts "Number of Wishlists: #{character_data[:wishlists]&.length || 0}"
+    
+    if character_data[:wishlists] && !character_data[:wishlists].empty?
+      character_data[:wishlists].each_with_index do |wishlist, index|
+        puts "\nWishlist #{index + 1}: #{wishlist[:name]}"
+        puts "  Items in wishlist: #{wishlist[:items]&.length || 0}"
+        
+        if wishlist[:items] && !wishlist[:items].empty?
+          puts "  First few items:"
+          wishlist[:items].first(3).each_with_index do |item, item_index|
+            puts "    #{item_index + 1}. #{item[:name]} (#{item[:quality]})"
+          end
+        else
+          puts "  NO ITEMS FOUND!"
+        end
+      end
+    else
+      puts "\nNO WISHLISTS FOUND!"
+    end
+    
+    # Save debug data
+    filename = "data/debug_single_character_#{Time.now.strftime('%Y%m%d_%H%M%S')}.json"
+    FileUtils.mkdir_p('data') unless Dir.exist?('data')
+    File.write(filename, JSON.pretty_generate(character_data))
+    puts "\nDebug data saved to: #{filename}".green
+    
+  rescue ThatsMyBisScraper::Error => e
+    puts "Scraper Error: #{e.message}".red
+    exit 1
+  rescue => e
+    puts "Unexpected Error: #{e.message}".red
+    puts e.backtrace.first(5).join("\n").red
+    exit 1
+  ensure
+    # Clean up the single WebDriver instance
+    driver_manager.cleanup
+  end
+end
+
+main if __FILE__ == $PROGRAM_NAME
